@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Mi Recorrido 3D</title>
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.0.0/dist/aframe-extras.min.js"></script>
+
+    <script>
+      AFRAME.registerComponent('colocar-mineral', {
+        init: function () {
+          let entorno = this.el;
+          let mineral = document.querySelector('#mi-mineral');
+
+          // Esperamos a que tu archivo untitled.glb cargue por completo
+          entorno.addEventListener('model-loaded', function () {
+            let modelo3D = entorno.getObject3D('mesh');
+            let baseEncontrada = null;
+
+            // Buscamos dentro de todos los objetos de tu archivo Blender
+            modelo3D.traverse(function (nodo) {
+              // Blender a veces cambia los espacios por guiones bajos, así que buscamos ambas opciones
+              if (nodo.name.includes('BASE_DE_MINERAL_2') || nodo.name.includes('BASE DE MINERAL 2')) {
+                baseEncontrada = nodo;
+              }
+            });
+
+            if (baseEncontrada) {
+              // Si la encuentra, obtiene sus coordenadas exactas
+              let posicionMundo = new THREE.Vector3();
+              baseEncontrada.getWorldPosition(posicionMundo);
+
+              // Le sumamos los 0.8 metros de altura que pediste
+              posicionMundo.y += 0.8;
+
+              // Movemos el archivo del mineral a esa nueva posición
+              mineral.setAttribute('position', `${posicionMundo.x} ${posicionMundo.y} ${posicionMundo.z}`);
+              console.log("¡Mineral colocado con éxito sobre la base!");
+            } else {
+              console.warn("No se encontró la base. Revisa el nombre exacto.");
+            }
+          });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <a-scene>
+      <a-assets>
+        <a-asset-item id="ambiente" src="untitled.glb"></a-asset-item>
+        <a-asset-item id="modelo-mineral" src="2. malachite_mineral.glb"></a-asset-item>
+      </a-assets>
+
+      <a-entity gltf-model="#ambiente" colocar-mineral></a-entity>
+
+      <a-entity id="mi-mineral" gltf-model="#modelo-mineral"></a-entity>
+
+      <a-entity movement-controls="speed: 0.15">
+        <a-entity camera position="0 1.5 0" look-controls></a-entity>
+      </a-entity>
+
+    </a-scene>
+  </body>
+</html>
