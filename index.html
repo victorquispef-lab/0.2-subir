@@ -2,33 +2,111 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>Mi Recorrido 3D</title>
-    <!-- Librerías necesarias para la carga del modelo y movimiento -->
+    <title>Mi Recorrido 3D Nocturno</title>
+    <!-- Librerías de A-Frame y Controles -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.0.0/dist/aframe-extras.min.js"></script>
+
+    <script>
+      // SCRIPT 1: Obliga a la cámara a mirar al cielo al hacer clic
+      AFRAME.registerComponent('boton-mirar-cielo', {
+        init: function () {
+          this.el.addEventListener('click', () => {
+            // Buscamos los controles de la cámara
+            let controlesCamara = document.querySelector('#mi-camara').components['look-controls'];
+            if (controlesCamara) {
+              // Forzamos el ángulo Pitch (arriba/abajo) a 90 grados (en radianes es Math.PI / 2)
+              controlesCamara.pitchObject.rotation.x = Math.PI / 2;
+              console.log("¡Mirando al cielo!");
+            }
+          });
+        }
+      });
+
+      // SCRIPT 2: Crea los puntos en el cielo con la forma de un corazón
+      AFRAME.registerComponent('corazon-estelar', {
+        init: function () {
+          let contenedor = this.el;
+          let cantidadPuntos = 150; // Cantidad de "estrellas"
+
+          for (let i = 0; i < cantidadPuntos; i++) {
+            let t = Math.PI * 2 * i / cantidadPuntos;
+            
+            // Fórmula matemática de un corazón
+            let x = 16 * Math.pow(Math.sin(t), 3);
+            let y = 13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t);
+
+            // Creamos una pequeña esfera (punto)
+            let punto = document.createElement('a-sphere');
+            
+            // Posicionamos el punto (ajustamos la escala de la fórmula multiplicando por 1.5)
+            punto.setAttribute('position', `${x * 1.5} ${y * 1.5} 0`);
+            punto.setAttribute('radius', '0.3');
+            punto.setAttribute('color', '#ff2a6d'); // Color rosa/rojo brillante
+            punto.setAttribute('material', 'shader: flat'); // Para que brille en la oscuridad sin luces
+
+            // Pequeña animación de movimiento para cada punto (palpitación)
+            punto.setAttribute('animation', `property: position; dir: alternate; dur: ${1000 + Math.random()*1000}; loop: true; to: ${x * 1.6} ${y * 1.6} ${(Math.random() * 2 - 1)}`);
+
+            // Agregamos el punto al contenedor principal
+            contenedor.appendChild(punto);
+          }
+        }
+      });
+    </script>
   </head>
   <body>
     <a-scene>
-      <!-- Definición de los activos (archivos GLB) -->
+      <!-- Cielo Nocturno -->
+      <a-sky color="#02020a"></a-sky>
+
+      <!-- Archivos 3D -->
       <a-assets>
         <a-asset-item id="ambiente" src="untitled.glb"></a-asset-item>
         <a-asset-item id="modelo-mineral" src="2. malachite_mineral.glb"></a-asset-item>
       </a-assets>
 
-      <!-- Modelo del entorno -->
+      <!-- Modelo del entorno sin techo -->
       <a-entity gltf-model="#ambiente"></a-entity>
 
-      <!-- Modelo del mineral con coordenadas calculadas para tu base -->
-      <!-- Coordenadas: X=-32.5, Y=0.8 (altura base + 0.8m), Z=6.5 -->
-      <a-entity id="mi-mineral" gltf-model="#modelo-mineral" position="-32.5 0.8 6.5"></a-entity>
+      <!-- Mineral (Posición CAD: X=-32.5, Y=0.8, Z=6.5) con una pequeña escala de ejemplo -->
+      <a-entity id="mi-mineral" gltf-model="#modelo-mineral" position="-32.5 0.8 6.5" scale="0.5 0.5 0.5"></a-entity>
 
-      <!-- Jugador: Cámara a 1.5 m de altura con controles tipo caminata (WASD o Flechas) -->
+      <!-- BOTÓN "APRETAR" -->
+      <!-- Puedes cambiar la posición (X, Y, Z) para ponerlo justo en el centro de tu proyecto -->
+      <a-entity 
+        position="0 1.5 -3" 
+        geometry="primitive: box; width: 1.2; height: 0.5; depth: 0.1" 
+        material="color: #ffffff" 
+        text="value: APRETAR; align: center; color: #000000; width: 5"
+        boton-mirar-cielo
+        animation__hover="property: scale; to: 1.1 1.1 1.1; startEvents: mouseenter; dur: 200"
+        animation__leave="property: scale; to: 1 1 1; startEvents: mouseleave; dur: 200">
+      </a-entity>
+
+      <!-- EL CORAZÓN ESTELAR EN EL CIELO -->
+      <!-- Lo ponemos a 60 metros de altura y lo rotamos para que mire hacia abajo -->
+      <!-- También tiene una animación de rotación muy lenta para que gire en el cielo -->
+      <a-entity 
+        position="0 60 0" 
+        rotation="-90 0 0" 
+        corazon-estelar 
+        animation="property: rotation; to: -90 360 0; loop: true; dur: 30000; easing: linear">
+      </a-entity>
+
+      <!-- Jugador y Cámara -->
       <a-entity movement-controls="speed: 0.45">
-        <a-entity camera position="0 1.5 0" look-controls></a-entity>
+        <a-entity id="mi-camara" camera position="0 1.9 0" look-controls>
+          <!-- El Cursor (Puntito en el centro de la pantalla) necesario para hacer clic -->
+          <a-cursor color="#ffffff" raycaster="objects: [boton-mirar-cielo]"></a-cursor>
+        </a-entity>
       </a-entity>
       
-      <!-- Luz básica para que no se vea oscuro el modelo -->
-      <a-light type="ambient" color="#ffffff" intensity="0.7"></a-light>
+      <!-- Luz ambiente suave para la noche -->
+      <a-light type="ambient" color="#222244" intensity="0.5"></a-light>
+      <!-- Luz extra para que el mineral y el entorno se vean bien -->
+      <a-light type="directional" color="#ffffff" intensity="0.6" position="-1 2 1"></a-light>
+
     </a-scene>
   </body>
 </html>
