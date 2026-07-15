@@ -3,75 +3,32 @@
   <head>
     <meta charset="utf-8">
     <title>Mi Recorrido 3D</title>
-    <!-- Cargamos la librería A-Frame -->
+    <!-- Librerías necesarias para la carga del modelo y movimiento -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-    <!-- Cargamos los controles de movimiento -->
     <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.0.0/dist/aframe-extras.min.js"></script>
-
-    <!-- Script actualizado que calcula el volumen real de la base -->
-    <script>
-      AFRAME.registerComponent('colocar-mineral', {
-        init: function () {
-          let entorno = this.el;
-          let mineral = document.querySelector('#mi-mineral');
-
-          // Esperamos a que el archivo untitled.glb cargue
-          entorno.addEventListener('model-loaded', function () {
-            let modelo3D = entorno.getObject3D('mesh');
-            let baseEncontrada = null;
-
-            // Buscamos el objeto por tu nombre limpio
-            modelo3D.traverse(function (nodo) {
-              if (nodo.name === 'BASE DE MINERAL 2') {
-                baseEncontrada = nodo;
-              }
-            });
-
-            if (baseEncontrada) {
-              // Calculamos el volumen de la base
-              let cajaDelimitadora = new THREE.Box3().setFromObject(baseEncontrada);
-              
-              // Obtenemos el centro (X, Z)
-              let centroReal = new THREE.Vector3();
-              cajaDelimitadora.getCenter(centroReal);
-
-              // Obtenemos el punto más alto de la base (Y)
-              let topeY = cajaDelimitadora.max.y;
-
-              // Sumamos los 0.8m solicitados
-              let alturaFinal = topeY + 0.8;
-
-              // Asignamos la nueva posición al mineral
-              mineral.setAttribute('position', `${centroReal.x} ${alturaFinal} ${centroReal.z}`);
-              console.log("¡Mineral colocado con éxito usando el volumen real!");
-              
-            } else {
-              console.warn("No se encontró la base. Verifica el nombre exacto.");
-            }
-          });
-        }
-      });
-    </script>
   </head>
   <body>
     <a-scene>
-      <!-- Archivos 3D -->
+      <!-- Definición de los activos (archivos GLB) -->
       <a-assets>
         <a-asset-item id="ambiente" src="untitled.glb"></a-asset-item>
         <a-asset-item id="modelo-mineral" src="2. malachite_mineral.glb"></a-asset-item>
       </a-assets>
 
-      <!-- Escenario principal que ejecuta el script -->
-      <a-entity gltf-model="#ambiente" colocar-mineral></a-entity>
+      <!-- Modelo del entorno -->
+      <a-entity gltf-model="#ambiente"></a-entity>
 
-      <!-- El mineral que será movido por el script -->
-      <a-entity id="mi-mineral" gltf-model="#modelo-mineral"></a-entity>
+      <!-- Modelo del mineral con coordenadas calculadas para tu base -->
+      <!-- Coordenadas: X=-29, Y=0.8 (altura base + 0.8m), Z=-4.5 -->
+      <a-entity id="mi-mineral" gltf-model="#modelo-mineral" position="-29 0.8 -4.5"></a-entity>
 
-      <!-- Jugador a 1.5m de altura con controles de movimiento -->
+      <!-- Jugador: Cámara a 1.5m de altura con controles tipo caminata (WASD o Flechas) -->
       <a-entity movement-controls="speed: 0.15">
         <a-entity camera position="0 1.5 0" look-controls></a-entity>
       </a-entity>
-
+      
+      <!-- Luz básica para que no se vea oscuro el modelo -->
+      <a-light type="ambient" color="#ffffff" intensity="0.7"></a-light>
     </a-scene>
   </body>
 </html>
