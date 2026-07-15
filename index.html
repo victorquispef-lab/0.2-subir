@@ -1,64 +1,42 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <title>Mi Recorrido 3D</title>
-    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.0.0/dist/aframe-extras.min.js"></script>
+<script>
+  AFRAME.registerComponent('colocar-mineral', {
+    init: function () {
+      let entorno = this.el;
+      let mineral = document.querySelector('#mi-mineral');
 
-    <script>
-      AFRAME.registerComponent('colocar-mineral', {
-        init: function () {
-          let entorno = this.el;
-          let mineral = document.querySelector('#mi-mineral');
+      entorno.addEventListener('model-loaded', function () {
+        let modelo3D = entorno.getObject3D('mesh');
+        let baseEncontrada = null;
 
-          // Esperamos a que tu archivo untitled.glb cargue por completo
-          entorno.addEventListener('model-loaded', function () {
-            let modelo3D = entorno.getObject3D('mesh');
-            let baseEncontrada = null;
+        // 1. Buscamos el nombre exacto basado en tu nueva captura
+        modelo3D.traverse(function (nodo) {
+          if (nodo.name === 'BASE DE MINERAL 2') {
+            baseEncontrada = nodo;
+          }
+        });
 
-            // Buscamos dentro de todos los objetos de tu archivo Blender
-            modelo3D.traverse(function (nodo) {
-              // Blender a veces cambia los espacios por guiones bajos, así que buscamos ambas opciones
-              if (nodo.name.includes('BASE_DE_MINERAL_2') || nodo.name.includes('BASE DE MINERAL 2')) {
-                baseEncontrada = nodo;
-              }
-            });
+        if (baseEncontrada) {
+          // 2. MAGIA AQUÍ: Calculamos el volumen real del objeto, ignorando su punto de origen
+          let cajaDelimitadora = new THREE.Box3().setFromObject(baseEncontrada);
+          
+          // 3. Obtenemos el centro exacto (X, Z) de ese volumen
+          let centroReal = new THREE.Vector3();
+          cajaDelimitadora.getCenter(centroReal);
 
-            if (baseEncontrada) {
-              // Si la encuentra, obtiene sus coordenadas exactas
-              let posicionMundo = new THREE.Vector3();
-              baseEncontrada.getWorldPosition(posicionMundo);
+          // 4. Obtenemos la cara superior (el punto más alto en Y del objeto)
+          let topeY = cajaDelimitadora.max.y;
 
-              // Le sumamos los 0.8 metros de altura que pediste
-              posicionMundo.y += 0.8;
+          // 5. Le sumamos los 0.8 metros que solicitaste
+          let alturaFinal = topeY + 0.8;
 
-              // Movemos el archivo del mineral a esa nueva posición
-              mineral.setAttribute('position', `${posicionMundo.x} ${posicionMundo.y} ${posicionMundo.z}`);
-              console.log("¡Mineral colocado con éxito sobre la base!");
-            } else {
-              console.warn("No se encontró la base. Revisa el nombre exacto.");
-            }
-          });
+          // 6. Movemos el mineral al centro X/Z y a la altura calculada
+          mineral.setAttribute('position', `${centroReal.x} ${alturaFinal} ${centroReal.z}`);
+          console.log("¡Mineral colocado calculando el volumen real de la base!");
+          
+        } else {
+          console.warn("No se encontró la base. Asegúrate de que exportaste el archivo después de renombrarlos.");
         }
       });
-    </script>
-  </head>
-  <body>
-    <a-scene>
-      <a-assets>
-        <a-asset-item id="ambiente" src="untitled.glb"></a-asset-item>
-        <a-asset-item id="modelo-mineral" src="2. malachite_mineral.glb"></a-asset-item>
-      </a-assets>
-
-      <a-entity gltf-model="#ambiente" colocar-mineral></a-entity>
-
-      <a-entity id="mi-mineral" gltf-model="#modelo-mineral"></a-entity>
-
-      <a-entity movement-controls="speed: 0.15">
-        <a-entity camera position="0 1.5 0" look-controls></a-entity>
-      </a-entity>
-
-    </a-scene>
-  </body>
-</html>
+    }
+  });
+</script>
