@@ -1,42 +1,77 @@
-<script>
-  AFRAME.registerComponent('colocar-mineral', {
-    init: function () {
-      let entorno = this.el;
-      let mineral = document.querySelector('#mi-mineral');
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Mi Recorrido 3D</title>
+    <!-- Cargamos la librería A-Frame -->
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <!-- Cargamos los controles de movimiento -->
+    <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.0.0/dist/aframe-extras.min.js"></script>
 
-      entorno.addEventListener('model-loaded', function () {
-        let modelo3D = entorno.getObject3D('mesh');
-        let baseEncontrada = null;
+    <!-- Script actualizado que calcula el volumen real de la base -->
+    <script>
+      AFRAME.registerComponent('colocar-mineral', {
+        init: function () {
+          let entorno = this.el;
+          let mineral = document.querySelector('#mi-mineral');
 
-        // 1. Buscamos el nombre exacto basado en tu nueva captura
-        modelo3D.traverse(function (nodo) {
-          if (nodo.name === 'BASE DE MINERAL 2') {
-            baseEncontrada = nodo;
-          }
-        });
+          // Esperamos a que el archivo untitled.glb cargue
+          entorno.addEventListener('model-loaded', function () {
+            let modelo3D = entorno.getObject3D('mesh');
+            let baseEncontrada = null;
 
-        if (baseEncontrada) {
-          // 2. MAGIA AQUÍ: Calculamos el volumen real del objeto, ignorando su punto de origen
-          let cajaDelimitadora = new THREE.Box3().setFromObject(baseEncontrada);
-          
-          // 3. Obtenemos el centro exacto (X, Z) de ese volumen
-          let centroReal = new THREE.Vector3();
-          cajaDelimitadora.getCenter(centroReal);
+            // Buscamos el objeto por tu nombre limpio
+            modelo3D.traverse(function (nodo) {
+              if (nodo.name === 'BASE DE MINERAL 2') {
+                baseEncontrada = nodo;
+              }
+            });
 
-          // 4. Obtenemos la cara superior (el punto más alto en Y del objeto)
-          let topeY = cajaDelimitadora.max.y;
+            if (baseEncontrada) {
+              // Calculamos el volumen de la base
+              let cajaDelimitadora = new THREE.Box3().setFromObject(baseEncontrada);
+              
+              // Obtenemos el centro (X, Z)
+              let centroReal = new THREE.Vector3();
+              cajaDelimitadora.getCenter(centroReal);
 
-          // 5. Le sumamos los 0.8 metros que solicitaste
-          let alturaFinal = topeY + 0.8;
+              // Obtenemos el punto más alto de la base (Y)
+              let topeY = cajaDelimitadora.max.y;
 
-          // 6. Movemos el mineral al centro X/Z y a la altura calculada
-          mineral.setAttribute('position', `${centroReal.x} ${alturaFinal} ${centroReal.z}`);
-          console.log("¡Mineral colocado calculando el volumen real de la base!");
-          
-        } else {
-          console.warn("No se encontró la base. Asegúrate de que exportaste el archivo después de renombrarlos.");
+              // Sumamos los 0.8m solicitados
+              let alturaFinal = topeY + 0.8;
+
+              // Asignamos la nueva posición al mineral
+              mineral.setAttribute('position', `${centroReal.x} ${alturaFinal} ${centroReal.z}`);
+              console.log("¡Mineral colocado con éxito usando el volumen real!");
+              
+            } else {
+              console.warn("No se encontró la base. Verifica el nombre exacto.");
+            }
+          });
         }
       });
-    }
-  });
-</script>
+    </script>
+  </head>
+  <body>
+    <a-scene>
+      <!-- Archivos 3D -->
+      <a-assets>
+        <a-asset-item id="ambiente" src="untitled.glb"></a-asset-item>
+        <a-asset-item id="modelo-mineral" src="2. malachite_mineral.glb"></a-asset-item>
+      </a-assets>
+
+      <!-- Escenario principal que ejecuta el script -->
+      <a-entity gltf-model="#ambiente" colocar-mineral></a-entity>
+
+      <!-- El mineral que será movido por el script -->
+      <a-entity id="mi-mineral" gltf-model="#modelo-mineral"></a-entity>
+
+      <!-- Jugador a 1.5m de altura con controles de movimiento -->
+      <a-entity movement-controls="speed: 0.15">
+        <a-entity camera position="0 1.5 0" look-controls></a-entity>
+      </a-entity>
+
+    </a-scene>
+  </body>
+</html>
